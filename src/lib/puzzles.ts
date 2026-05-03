@@ -16,6 +16,10 @@ export function caesarDecrypt(text: string, shift: number) {
     .join("");
 }
 
+export function caesarEncrypt(text: string, shift: number) {
+  return caesarDecrypt(text, -shift);
+}
+
 export function modInverse(a: number, m: number): number | null {
   const normalized = ((a % m) + m) % m;
   for (let x = 1; x < m; x += 1) {

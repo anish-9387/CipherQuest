@@ -32,18 +32,18 @@ html {
 
 body {
   min-height: 100%;
-  background:
+  background-color: #000000;
+  background-image:
     radial-gradient(
-      1200px 800px at 10% 10%,
-      rgba(70, 242, 179, 0.12),
+      900px 600px at 10% 10%,
+      rgba(70, 242, 179, 0.08),
       transparent 60%
     ),
     radial-gradient(
-      1000px 700px at 90% 20%,
-      rgba(88, 210, 255, 0.12),
+      900px 600px at 90% 20%,
+      rgba(88, 210, 255, 0.08),
       transparent 55%
-    ),
-    linear-gradient(160deg, var(--background), var(--background-2));
+    );
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   letter-spacing: 0.01em;

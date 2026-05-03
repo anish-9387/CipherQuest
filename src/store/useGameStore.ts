@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
 
 const TOTAL_LEVELS = 5;
 
@@ -17,33 +16,21 @@ const defaultState = {
   completedLevels: [],
 };
 
-const storage = createJSONStorage(() =>
-  typeof window === "undefined" ? undefined : localStorage
-);
-
-export const useGameStore = create<GameState>()(
-  persist(
-    (set) => ({
-      ...defaultState,
-      completeLevel: (level) =>
-        set((state) => {
-          if (state.completedLevels.includes(level)) {
-            return state;
-          }
-          const completedLevels = [...state.completedLevels, level].sort(
-            (a, b) => a - b
-          );
-          const nextLevel = Math.min(level + 1, state.totalLevels);
-          return {
-            completedLevels,
-            level: Math.max(state.level, nextLevel),
-          };
-        }),
-      reset: () => set(defaultState),
+export const useGameStore = create<GameState>()((set) => ({
+  ...defaultState,
+  completeLevel: (level) =>
+    set((state) => {
+      if (state.completedLevels.includes(level)) {
+        return state;
+      }
+      const completedLevels = [...state.completedLevels, level].sort(
+        (a, b) => a - b
+      );
+      const nextLevel = Math.min(level + 1, state.totalLevels);
+      return {
+        completedLevels,
+        level: Math.max(state.level, nextLevel),
+      };
     }),
-    {
-      name: "cipher-quest-progress",
-      storage,
-    }
-  )
-);
+  reset: () => set(defaultState),
+}));

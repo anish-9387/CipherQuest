@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import LevelShell from "@/components/LevelShell";
 import PuzzleCard from "@/components/PuzzleCard";
@@ -12,19 +12,37 @@ import { playError, playSuccess } from "@/lib/sound";
 import { useLevelGuard } from "@/lib/useLevelGuard";
 import { useGameStore } from "@/store/useGameStore";
 
-const MOD = 26;
-const COEFFICIENT = 7;
-const EXPECTED = modInverse(COEFFICIENT, MOD) ?? 15;
+const QUESTIONS = [
+  { id: "L2-01", coefficient: 3, modulus: 26 },
+  { id: "L2-02", coefficient: 5, modulus: 26 },
+  { id: "L2-03", coefficient: 7, modulus: 26 },
+  { id: "L2-04", coefficient: 9, modulus: 26 },
+  { id: "L2-05", coefficient: 11, modulus: 26 },
+  { id: "L2-06", coefficient: 15, modulus: 26 },
+  { id: "L2-07", coefficient: 17, modulus: 26 },
+  { id: "L2-08", coefficient: 19, modulus: 26 },
+  { id: "L2-09", coefficient: 21, modulus: 26 },
+  { id: "L2-10", coefficient: 23, modulus: 26 },
+];
+
+function pickRandomQuestion<T>(items: T[]) {
+  return items[Math.floor(Math.random() * items.length)] ?? items[0];
+}
 
 export default function Level2Page() {
   useLevelGuard(2);
   const completeLevel = useGameStore((state) => state.completeLevel);
   const [answer, setAnswer] = useState("");
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const question = useMemo(() => pickRandomQuestion(QUESTIONS), []);
+  const expected = useMemo(
+    () => modInverse(question.coefficient, question.modulus) ?? 0,
+    [question]
+  );
 
   const handleCheck = () => {
     const numeric = Number(answer);
-    if (Number.isFinite(numeric) && numeric === EXPECTED) {
+    if (Number.isFinite(numeric) && numeric === expected) {
       completeLevel(2);
       setStatus("success");
       playSuccess();
@@ -45,17 +63,22 @@ export default function Level2Page() {
         title="Find x"
         subtitle="Compute the modular inverse for the key schedule."
       >
+        <p className="text-xs uppercase tracking-[0.3em] text-muted">
+          Question {question.id}
+        </p>
         <div className="rounded-md border border-border bg-black/60 px-4 py-5 text-center font-mono text-2xl text-accent">
-          {COEFFICIENT}x ≡ 1 (mod {MOD})
+          {question.coefficient}x ≡ 1 (mod {question.modulus})
         </div>
-        <HintBox hint="You need the modular inverse of 7 under mod 26." />
+        <HintBox
+          hint={`Find the inverse of ${question.coefficient} modulo ${question.modulus}.`}
+        />
         <InputBox
           label="Value of x"
           value={answer}
           onChange={setAnswer}
           type="number"
           placeholder="Enter a number between 0 and 25"
-          helper="If (7 * x) mod 26 = 1, you found it."
+          helper={`If (${question.coefficient} * x) mod ${question.modulus} = 1, you found it.`}
         />
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn-primary" onClick={handleCheck}>

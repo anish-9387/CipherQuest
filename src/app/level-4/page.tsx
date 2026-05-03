@@ -12,23 +12,91 @@ import { playError, playSuccess } from "@/lib/sound";
 import { useLevelGuard } from "@/lib/useLevelGuard";
 import { useGameStore } from "@/store/useGameStore";
 
-const PRIVATE_KEY = "delta-7-echo";
-const DEFAULT_MESSAGE = "Authorize transfer at node 7.";
+const QUESTIONS = [
+  {
+    id: "L4-01",
+    message: "Authorize transfer at node 7.",
+    privateKey: "delta-7-echo",
+    hint: "Check for any altered characters.",
+  },
+  {
+    id: "L4-02",
+    message: "Bypass gate three with clearance alpha.",
+    privateKey: "alpha-clearance",
+    hint: "The signature only matches the original payload.",
+  },
+  {
+    id: "L4-03",
+    message: "Deploy firewall patch 12B immediately.",
+    privateKey: "patch-12b-key",
+    hint: "Try inserting a space to break it.",
+  },
+  {
+    id: "L4-04",
+    message: "Rotate access codes at 19:00 UTC.",
+    privateKey: "rotate-utc-19",
+    hint: "Time stamps must be exact.",
+  },
+  {
+    id: "L4-05",
+    message: "Sync backup shards to vault 5.",
+    privateKey: "vault-five-sync",
+    hint: "Even a single character change fails.",
+  },
+  {
+    id: "L4-06",
+    message: "Restart proxy nodes on signal green.",
+    privateKey: "proxy-green",
+    hint: "Keep the message untouched.",
+  },
+  {
+    id: "L4-07",
+    message: "Disable rogue process 09X.",
+    privateKey: "rogue-09x",
+    hint: "Signatures bind the exact string.",
+  },
+  {
+    id: "L4-08",
+    message: "Engage isolation protocol Kappa.",
+    privateKey: "kappa-isolate",
+    hint: "Case sensitivity matters.",
+  },
+  {
+    id: "L4-09",
+    message: "Route telemetry through node A3.",
+    privateKey: "telemetry-a3",
+    hint: "Any edit invalidates the signature.",
+  },
+  {
+    id: "L4-10",
+    message: "Confirm endpoint seal is intact.",
+    privateKey: "seal-intact",
+    hint: "Do not add extra punctuation.",
+  },
+];
+
+function pickRandomQuestion<T>(items: T[]) {
+  return items[Math.floor(Math.random() * items.length)] ?? items[0];
+}
 
 export default function Level4Page() {
   useLevelGuard(4);
   const completeLevel = useGameStore((state) => state.completeLevel);
-  const [message, setMessage] = useState(DEFAULT_MESSAGE);
+  const question = useMemo(() => pickRandomQuestion(QUESTIONS), []);
+  const [message, setMessage] = useState(question.message);
   const [status, setStatus] = useState<"idle" | "valid" | "invalid">("idle");
 
   const signature = useMemo(
-    () => signMessage(DEFAULT_MESSAGE, PRIVATE_KEY),
-    []
+    () => signMessage(question.message, question.privateKey),
+    [question]
   );
-  const publicKey = useMemo(() => derivePublicKey(PRIVATE_KEY), []);
+  const publicKey = useMemo(
+    () => derivePublicKey(question.privateKey),
+    [question]
+  );
 
   const handleVerify = () => {
-    const isValid = verifySignature(message, signature, PRIVATE_KEY);
+    const isValid = verifySignature(message, signature, question.privateKey);
     if (isValid) {
       completeLevel(4);
       setStatus("valid");
@@ -50,6 +118,9 @@ export default function Level4Page() {
         title="Verify Authenticity"
         subtitle="If the message was tampered with, the signature will fail."
       >
+        <p className="text-xs uppercase tracking-[0.3em] text-muted">
+          Question {question.id}
+        </p>
         <InputBox
           label="Message Payload"
           value={message}
@@ -70,7 +141,7 @@ export default function Level4Page() {
           </p>
           <p className="mt-2 font-mono text-sm text-accent-2">{publicKey}</p>
         </div>
-        <HintBox hint="Try editing the message to see the signature fail." />
+        <HintBox hint={question.hint} />
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn-primary" onClick={handleVerify}>
             Verify Signature

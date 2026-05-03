@@ -7,45 +7,145 @@ import PuzzleCard from "@/components/PuzzleCard";
 import InputBox from "@/components/InputBox";
 import ResultBox from "@/components/ResultBox";
 import HintBox from "@/components/HintBox";
-import { caesarDecrypt, modInverse, signMessage, verifySignature } from "@/lib/puzzles";
+import {
+  caesarEncrypt,
+  modInverse,
+  signMessage,
+  verifySignature,
+} from "@/lib/puzzles";
 import { playError, playSuccess } from "@/lib/sound";
 import { useLevelGuard } from "@/lib/useLevelGuard";
 import { useGameStore } from "@/store/useGameStore";
 
-const CLUE_ENCRYPTED = "NHB LV 15";
-const CLUE_SHIFT = 3;
-const MOD_COEFFICIENT = 7;
-const MODULUS = 26;
-const MESSAGE = "ACCESS GRANTED";
-const PRIVATE_KEY = "delta-7-echo";
+const QUESTIONS = [
+  {
+    id: "L5-01",
+    cluePlaintext: "KEYISFIFTEEN",
+    clueShift: 3,
+    modCoefficient: 7,
+    modulus: 26,
+    message: "ACCESS GRANTED",
+    privateKey: "delta-7-echo",
+  },
+  {
+    id: "L5-02",
+    cluePlaintext: "EXITISOPEN",
+    clueShift: 5,
+    modCoefficient: 5,
+    modulus: 26,
+    message: "OVERRIDE NODE 2",
+    privateKey: "override-node-2",
+  },
+  {
+    id: "L5-03",
+    cluePlaintext: "LOCKDISABLED",
+    clueShift: 4,
+    modCoefficient: 11,
+    modulus: 26,
+    message: "CLEARANCE ACCEPTED",
+    privateKey: "clearance-accepted",
+  },
+  {
+    id: "L5-04",
+    cluePlaintext: "SYSTEMSTABLE",
+    clueShift: 2,
+    modCoefficient: 9,
+    modulus: 26,
+    message: "SHUTDOWN THREAT",
+    privateKey: "shutdown-threat",
+  },
+  {
+    id: "L5-05",
+    cluePlaintext: "PORTALUNLOCK",
+    clueShift: 7,
+    modCoefficient: 15,
+    modulus: 26,
+    message: "CONFIRM AUTH ROUTE",
+    privateKey: "auth-route",
+  },
+  {
+    id: "L5-06",
+    cluePlaintext: "GATEISOPEN",
+    clueShift: 1,
+    modCoefficient: 17,
+    modulus: 26,
+    message: "ENABLE EXIT PROTOCOL",
+    privateKey: "exit-protocol",
+  },
+  {
+    id: "L5-07",
+    cluePlaintext: "ESCAPEWINDOW",
+    clueShift: 8,
+    modCoefficient: 19,
+    modulus: 26,
+    message: "VERIFY FINAL SEAL",
+    privateKey: "final-seal",
+  },
+  {
+    id: "L5-08",
+    cluePlaintext: "NODEUNLOCKED",
+    clueShift: 6,
+    modCoefficient: 21,
+    modulus: 26,
+    message: "RESTORE CORE LINK",
+    privateKey: "core-link",
+  },
+  {
+    id: "L5-09",
+    cluePlaintext: "OVERRIDESET",
+    clueShift: 9,
+    modCoefficient: 23,
+    modulus: 26,
+    message: "OPEN SECURITY DOOR",
+    privateKey: "security-door",
+  },
+  {
+    id: "L5-10",
+    cluePlaintext: "ESCAPEGRANTED",
+    clueShift: 3,
+    modCoefficient: 3,
+    modulus: 26,
+    message: "FINAL AUTH CHECK",
+    privateKey: "final-auth",
+  },
+];
+
+function pickRandomQuestion<T>(items: T[]) {
+  return items[Math.floor(Math.random() * items.length)] ?? items[0];
+}
 
 export default function Level5Page() {
   useLevelGuard(5);
   const router = useRouter();
   const completeLevel = useGameStore((state) => state.completeLevel);
+  const question = useMemo(() => pickRandomQuestion(QUESTIONS), []);
+  const encryptedClue = useMemo(
+    () => caesarEncrypt(question.cluePlaintext, question.clueShift),
+    [question]
+  );
   const [clueInput, setClueInput] = useState("");
   const [modInput, setModInput] = useState("");
-  const [command, setCommand] = useState(MESSAGE);
+  const [command, setCommand] = useState(question.message);
   const [sigStatus, setSigStatus] = useState<"idle" | "valid" | "invalid">(
     "idle"
   );
 
-  const expectedClue = useMemo(
-    () => caesarDecrypt(CLUE_ENCRYPTED, CLUE_SHIFT),
-    []
-  );
+  const expectedClue = question.cluePlaintext;
   const expectedMod = useMemo(
-    () => modInverse(MOD_COEFFICIENT, MODULUS) ?? 15,
-    []
+    () => modInverse(question.modCoefficient, question.modulus) ?? 0,
+    [question]
   );
-  const signature = useMemo(() => signMessage(MESSAGE, PRIVATE_KEY), []);
+  const signature = useMemo(
+    () => signMessage(question.message, question.privateKey),
+    [question]
+  );
 
   const clueSolved = clueInput.trim().toUpperCase() === expectedClue;
   const modSolved = Number(modInput) === expectedMod;
   const canEscape = clueSolved && modSolved && sigStatus === "valid";
 
   const handleVerify = () => {
-    const isValid = verifySignature(command, signature, PRIVATE_KEY);
+    const isValid = verifySignature(command, signature, question.privateKey);
     setSigStatus(isValid ? "valid" : "invalid");
     if (isValid) {
       playSuccess();
@@ -71,10 +171,13 @@ export default function Level5Page() {
         title="Decrypt the Clue"
         subtitle="This cipher reveals the key phrase."
       >
+        <p className="text-xs uppercase tracking-[0.3em] text-muted">
+          Question {question.id}
+        </p>
         <div className="rounded-md border border-border bg-black/60 px-4 py-5 text-center font-mono text-2xl text-accent">
-          {CLUE_ENCRYPTED}
+          {encryptedClue}
         </div>
-        <HintBox hint={`Shift = ${CLUE_SHIFT}.`} />
+        <HintBox hint={`Shift = ${question.clueShift}.`} />
         <InputBox
           label="Decrypted Clue"
           value={clueInput}
@@ -92,7 +195,7 @@ export default function Level5Page() {
         subtitle="Find the inverse to power the exit key."
       >
         <div className="rounded-md border border-border bg-black/60 px-4 py-5 text-center font-mono text-2xl text-accent">
-          {MOD_COEFFICIENT}x ≡ 1 (mod {MODULUS})
+          {question.modCoefficient}x ≡ 1 (mod {question.modulus})
         </div>
         <InputBox
           label="x Value"

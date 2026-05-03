@@ -11,16 +11,33 @@ import { playSuccess } from "@/lib/sound";
 import { useLevelGuard } from "@/lib/useLevelGuard";
 import { useGameStore } from "@/store/useGameStore";
 
-const PASSWORD = "1234";
+const QUESTIONS = [
+  { id: "L3-01", password: "0042", hint: "Starts with 00." },
+  { id: "L3-02", password: "1234", hint: "Classic weak pin." },
+  { id: "L3-03", password: "1337", hint: "Leet culture." },
+  { id: "L3-04", password: "2024", hint: "A recent year." },
+  { id: "L3-05", password: "3141", hint: "Pi sequence." },
+  { id: "L3-06", password: "4444", hint: "All digits match." },
+  { id: "L3-07", password: "9001", hint: "Power level." },
+  { id: "L3-08", password: "2718", hint: "Euler's constant." },
+  { id: "L3-09", password: "7777", hint: "Lucky digits." },
+  { id: "L3-10", password: "0007", hint: "License to crack." },
+];
+
+function pickRandomQuestion<T>(items: T[]) {
+  return items[Math.floor(Math.random() * items.length)] ?? items[0];
+}
+
 const STEP = 73;
 const INTERVAL_MS = 35;
 
 export default function Level3Page() {
   useLevelGuard(3);
   const completeLevel = useGameStore((state) => state.completeLevel);
+  const question = useMemo(() => pickRandomQuestion(QUESTIONS), []);
   const targetAttempts = useMemo(
-    () => bruteForceAttempts(PASSWORD) ?? 0,
-    []
+    () => bruteForceAttempts(question.password) ?? 0,
+    [question]
   );
   const [attempts, setAttempts] = useState(0);
   const [status, setStatus] = useState<"idle" | "running" | "done">("idle");
@@ -65,10 +82,15 @@ export default function Level3Page() {
         title="Crack the 4-Digit Password"
         subtitle="Watch the attack run until the correct passcode is found."
       >
+        <p className="text-xs uppercase tracking-[0.3em] text-muted">
+          Question {question.id}
+        </p>
         <div className="rounded-md border border-border bg-black/60 px-4 py-5 text-center font-mono text-2xl tracking-[0.4em] text-accent">
-          {status === "done" ? PASSWORD : "----"}
+          {status === "done" ? question.password : "----"}
         </div>
-        <HintBox hint="Weak passwords fall fast. It is only four digits." />
+        <HintBox
+          hint={`Weak passwords fall fast. ${question.hint}`}
+        />
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-muted">
             <span>Attempts</span>
